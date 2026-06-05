@@ -1,0 +1,27 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "kitchzing-worker",
+  "main": "src/index.ts",
+  "compatibility_date": "2025-06-01",
+  "compatibility_flags": ["nodejs_compat"],
+
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "kitchzing-db",
+      "database_id": "f193ae31-85cd-46fb-ae35-e8f8e19af753",
+      "migrations_dir": "migrations"
+    }
+  ],
+
+  "kv_namespaces": [
+    {
+      "binding": "KV",
+      "id": "524bb627e7984b1f980d7bd28b524a1c"
+    }
+  ],
+
+  "observability": {
+    "enabled": true
+  }
+}
