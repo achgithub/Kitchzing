@@ -1,0 +1,22 @@
+{"_e":"root:init","_t":1780692590396,"format":"v0-jsonl","version":"56.1.13"}
+{"_e":"env:mode","_t":1780692590397,"nodeEnv":"development","babelEnv":"development","mode":"development"}
+{"_e":"env:load","_t":1780692590399,"mode":"development","files":[],"env":{}}
+{"_e":"root:init","_t":1780692624686,"format":"v0-jsonl","version":"56.1.13"}
+{"_e":"env:mode","_t":1780692624687,"nodeEnv":"development","babelEnv":"development","mode":"development"}
+{"_e":"env:load","_t":1780692624688,"mode":"development","files":[],"env":{}}
+{"_e":"devserver:start","_t":1780692624836,"mode":"development","web":true,"baseUrl":"","asyncRoutes":false,"routerRoot":"../../../app","serverComponents":false,"serverActions":false,"serverRendering":false,"apiRoutes":false,"exporting":false}
+{"_e":"metro:config","_t":1780692625374,"serverRoot":"../../../../..","projectRoot":"../../..","exporting":false,"flags":{"autolinkingModuleResolution":true,"serverActions":false,"serverComponents":false,"reactCompiler":false,"optimizeGraph":false,"treeshaking":false,"logbox":false}}
+{"_e":"metro:instantiate","_t":1780692625783,"atlas":false,"workers":7,"host":"::","port":8082}
+{"_e":"metro:bundling:started","_t":1780692643282,"id":"1","platform":"ios","environment":null,"entry":"node_modules/.pnpm/expo-router@56.2.8_@babel+core@7.29.7_@expo+log-box@56.0.12_@expo+metro-runtime@56.0.13_@test_et7qzbcx2lj7yutfe7dzs72ngm/node_modules/expo-router/entry.js"}
+{"_e":"metro:bundling:failed","_t":1780692643632,"id":"1","message":"../../node_modules/.pnpm/expo-router@56.2.8_@babel+core@7.29.7_@expo+log-box@56.0.12_@expo+metro-runtime@56.0.13_@test_et7qzbcx2lj7yutfe7dzs72ngm/node_modules/expo-router/entry.js: [BABEL] /Users/andrewharris/projects/kitchzing/node_modules/.pnpm/expo-router@56.2.8_@babel+core@7.29.7_@expo+log-box@56.0.12_@expo+metro-runtime@56.0.13_@test_et7qzbcx2lj7yutfe7dzs72ngm/node_modules/expo-router/entry.js: .plugins is not a valid Plugin property","importStack":null,"filename":null,"targetModuleName":null,"originModulePath":null}
+{"_e":"root:init","_t":1780692694278,"format":"v0-jsonl","version":"56.1.13"}
+{"_e":"env:mode","_t":1780692694278,"nodeEnv":"development","babelEnv":"development","mode":"development"}
+{"_e":"env:load","_t":1780692694280,"mode":"development","files":[],"env":{}}
+{"_e":"devserver:start","_t":1780692694442,"mode":"development","web":true,"baseUrl":"","asyncRoutes":false,"routerRoot":"../../../app","serverComponents":false,"serverActions":false,"serverRendering":false,"apiRoutes":false,"exporting":false}
+{"_e":"metro:config","_t":1780692694963,"serverRoot":"../../../../..","projectRoot":"../../..","exporting":false,"flags":{"autolinkingModuleResolution":true,"serverActions":false,"serverComponents":false,"reactCompiler":false,"optimizeGraph":false,"treeshaking":false,"logbox":false}}
+{"_e":"metro:instantiate","_t":1780692695330,"atlas":false,"workers":7,"host":"::","port":8082}
+{"_e":"metro:bundling:started","_t":1780692698910,"id":"2","platform":"ios","environment":null,"entry":"node_modules/.pnpm/expo-router@56.2.8_@babel+core@7.29.7_@expo+log-box@56.0.12_@expo+metro-runtime@56.0.13_@test_et7qzbcx2lj7yutfe7dzs72ngm/node_modules/expo-router/entry.js"}
+{"_e":"metro:bundling:done","_t":1780692704635,"id":"2","total":1242,"ms":5725.943291}
+{"_e":"metro:bundling:started","_t":1780692750318,"id":"c","platform":"ios","environment":null,"entry":"node_modules/.pnpm/expo-router@56.2.8_@babel+core@7.29.7_@expo+log-box@56.0.12_@expo+metro-runtime@56.0.13_@test_et7qzbcx2lj7yutfe7dzs72ngm/node_modules/expo-router/entry.js"}
+{"_e":"metro:bundling:done","_t":1780692750366,"id":"c","total":1,"ms":47.75425}
+{"_e":"metro:client_log","_t":1780693289618,"level":"warn","data":["SafeAreaView has been deprecated and will be removed in a future release. Please use 'react-native-safe-area-context' instead. See https://github.com/AppAndFlow/react-native-safe-area-context"]}

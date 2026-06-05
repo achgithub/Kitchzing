@@ -56,6 +56,14 @@ export const api = {
     return request<{ orders: Order[] }>("/orders/active", { token });
   },
 
+  switchRole(role: string, sessionToken: string) {
+    return request<{ session_token: string; role: string }>("/auth/role", {
+      method: "POST",
+      body: JSON.stringify({ role }),
+      token: sessionToken,
+    });
+  },
+
   advanceItemState(itemId: string, state: string, sessionToken: string) {
     return request<{ ok: boolean }>(`/orders/items/${itemId}/state`, {
       method: "PATCH",

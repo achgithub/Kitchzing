@@ -2,6 +2,7 @@ export interface DeviceTokenPayload {
   type: "device";
   device_id: string;
   restaurant_id: string;
+  exp?: number;
 }
 
 export interface SessionTokenPayload {
@@ -10,9 +11,12 @@ export interface SessionTokenPayload {
   restaurant_id: string;
   staff_id: string;
   role: string;
+  exp?: number;
 }
 
 type TokenPayload = DeviceTokenPayload | SessionTokenPayload;
+
+const SESSION_TTL_SECONDS = 8 * 60 * 60; // 8 hours per spec
 
 function base64url(buf: ArrayBuffer | Uint8Array): string {
   const bytes = buf instanceof Uint8Array ? buf : new Uint8Array(buf);
@@ -39,8 +43,12 @@ async function importKey(secret: string): Promise<CryptoKey> {
 }
 
 export async function signJwt(payload: TokenPayload, secret: string): Promise<string> {
+  const withExp: TokenPayload =
+    payload.type === "session"
+      ? { ...payload, exp: Math.floor(Date.now() / 1000) + SESSION_TTL_SECONDS }
+      : payload;
   const header = base64url(new TextEncoder().encode(JSON.stringify({ alg: "HS256", typ: "JWT" })));
-  const body = base64url(new TextEncoder().encode(JSON.stringify(payload)));
+  const body = base64url(new TextEncoder().encode(JSON.stringify(withExp)));
   const key = await importKey(secret);
   const sig = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(`${header}.${body}`));
   return `${header}.${body}.${base64url(sig)}`;
@@ -59,7 +67,9 @@ export async function verifyJwt<T extends TokenPayload>(token: string, secret: s
   );
   if (!valid) return null;
   try {
-    return JSON.parse(new TextDecoder().decode(base64urlDecode(body!))) as T;
+    const payload = JSON.parse(new TextDecoder().decode(base64urlDecode(body!))) as T & { exp?: number };
+    if (typeof payload.exp === "number" && payload.exp < Math.floor(Date.now() / 1000)) return null;
+    return payload;
   } catch {
     return null;
   }

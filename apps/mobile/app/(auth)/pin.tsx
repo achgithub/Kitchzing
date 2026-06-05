@@ -27,6 +27,7 @@ export default function PinScreen() {
     setLoading(true);
     try {
       const res = await api.login({ pin: code }, deviceToken);
+      // Session token contains default_role — role selector will re-issue with chosen role
       setSession(res.session_token, res.name, res.role as Role);
       router.replace("/(auth)/role");
     } catch (e) {

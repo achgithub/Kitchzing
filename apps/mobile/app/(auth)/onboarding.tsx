@@ -1,10 +1,12 @@
 import { useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, Alert } from "react-native";
+import { useRouter } from "expo-router";
 import { useAuth } from "../../src/context/auth";
 import { api, ApiError } from "../../src/lib/api";
 
 export default function Onboarding() {
   const { setDevice } = useAuth();
+  const router = useRouter();
   const [code, setCode] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -15,6 +17,7 @@ export default function Onboarding() {
     try {
       const res = await api.register({ restaurant_code: cleaned, device_name: "Mobile Device" });
       setDevice(res.device_token, res.restaurant_name);
+      router.replace("/(auth)/pin");
     } catch (e) {
       Alert.alert("Error", e instanceof ApiError ? e.message : "Could not register device");
     } finally {

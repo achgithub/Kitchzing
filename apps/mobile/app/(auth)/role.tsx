@@ -1,6 +1,8 @@
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { useState } from "react";
+import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator, Alert } from "react-native";
 import { useRouter } from "expo-router";
 import { useAuth } from "../../src/context/auth";
+import { api, ApiError } from "../../src/lib/api";
 import type { Role } from "@kitchzing/core";
 
 const ROLES: { role: Role; label: string; description: string; emoji: string }[] = [
@@ -13,16 +15,25 @@ const ROLES: { role: Role; label: string; description: string; emoji: string }[]
 export default function RoleSelector() {
   const { setSession, sessionToken, staffName } = useAuth();
   const router = useRouter();
+  const [loading, setLoading] = useState<Role | null>(null);
 
-  function pick(role: Role) {
+  async function pick(role: Role) {
     if (!sessionToken || !staffName) return;
-    setSession(sessionToken, staffName, role);
-    if (role === "kitchen" || role === "manager") {
-      router.replace("/(kitchen)/queue");
-    } else if (role === "waiter") {
-      router.replace("/(waiter)/menu");
-    } else {
-      router.replace("/(kitchen)/queue");
+    setLoading(role);
+    try {
+      const res = await api.switchRole(role, sessionToken);
+      setSession(res.session_token, staffName, role);
+      if (role === "kitchen" || role === "manager") {
+        router.replace("/(kitchen)/queue");
+      } else if (role === "waiter") {
+        router.replace("/(waiter)/menu");
+      } else {
+        router.replace("/(kitchen)/queue");
+      }
+    } catch (e) {
+      Alert.alert("Error", e instanceof ApiError ? e.message : "Could not switch role");
+    } finally {
+      setLoading(null);
     }
   }
 
@@ -38,7 +49,7 @@ export default function RoleSelector() {
               <Text style={s.roleLabel}>{r.label}</Text>
               <Text style={s.roleDesc}>{r.description}</Text>
             </View>
-            <Text style={s.chevron}>›</Text>
+            {loading === r.role ? <ActivityIndicator size="small" /> : <Text style={s.chevron}>›</Text>}
           </TouchableOpacity>
         ))}
       </View>

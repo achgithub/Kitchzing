@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import type { Env } from "../index";
-import { signJwt } from "../lib/jwt";
+import { signJwt, verifyJwt } from "../lib/jwt";
 import { newId, now } from "../lib/id";
 
 const auth = new Hono<{ Bindings: Env }>();
@@ -60,40 +60,41 @@ auth.post("/register", async (c) => {
 });
 
 // POST /auth/login — PIN validation, returns session token
+// Role is always taken from staff.default_role — never from the client body
 auth.post("/login", async (c) => {
-  const auth = c.req.header("Authorization");
-  if (!auth?.startsWith("Bearer ")) {
+  const authHeader = c.req.header("Authorization");
+  if (!authHeader?.startsWith("Bearer ")) {
     return c.json({ error: "device_token required" }, 401);
   }
 
-  const body = await c.req.json<{ pin: string; role?: string }>();
+  const body = await c.req.json<{ pin: string }>();
   if (!body.pin) {
     return c.json({ error: "pin is required" }, 400);
   }
 
-  // Resolve device from token (lightweight — no DB read needed yet)
-  const { verifyJwt } = await import("../lib/jwt");
-  const device = await verifyJwt(auth.slice(7), c.env.JWT_SECRET);
+  const device = await verifyJwt(authHeader.slice(7), c.env.JWT_SECRET);
   if (!device || device.type !== "device") {
     return c.json({ error: "Invalid device token" }, 401);
   }
 
-  // Hash the submitted PIN then compare
-  const pinHash = await hashPin(body.pin);
-
-  const staff = await c.env.DB.prepare(
-    "SELECT id, name, default_role, active FROM staff WHERE restaurant_id = ? AND pin_hash = ?"
+  // Load all active staff for this restaurant, then verify PIN with constant-time PBKDF2 compare.
+  // We don't filter by pin_hash in SQL — that would leak timing and force a global hash space.
+  const allStaff = await c.env.DB.prepare(
+    "SELECT id, name, pin_hash, default_role, active FROM staff WHERE restaurant_id = ? AND active = 1"
   )
-    .bind(device.restaurant_id, pinHash)
-    .first<{ id: string; name: string; default_role: string; active: number }>();
+    .bind(device.restaurant_id)
+    .all<{ id: string; name: string; pin_hash: string; default_role: string; active: number }>();
 
-  if (!staff || !staff.active) {
-    return c.json({ error: "Invalid PIN" }, 401);
+  let matched: { id: string; name: string; default_role: string } | null = null;
+  for (const staff of allStaff.results) {
+    if (await verifyPin(body.pin, staff.pin_hash)) {
+      matched = staff;
+      break;
+    }
   }
 
-  const role = body.role ?? staff.default_role;
+  if (!matched) return c.json({ error: "Invalid PIN" }, 401);
 
-  // Update device last_seen
   await c.env.DB.prepare("UPDATE devices SET last_seen = ? WHERE id = ?")
     .bind(now(), device.device_id)
     .run();
@@ -103,25 +104,76 @@ auth.post("/login", async (c) => {
       type: "session",
       device_id: device.device_id,
       restaurant_id: device.restaurant_id,
-      staff_id: staff.id,
-      role,
+      staff_id: matched.id,
+      role: matched.default_role,
     },
     c.env.JWT_SECRET
   );
 
   return c.json({
     session_token,
-    staff_id: staff.id,
-    name: staff.name,
-    role,
+    staff_id: matched.id,
+    name: matched.name,
+    role: matched.default_role,
   });
 });
 
+// POST /auth/role — re-issue session token with a chosen role
+// The role selector calls this after login. All 4 roles are valid for any staff member
+// (per spec: staff are trusted to know their role).
+auth.post("/role", async (c) => {
+  const authHeader = c.req.header("Authorization");
+  if (!authHeader?.startsWith("Bearer ")) return c.json({ error: "Unauthorized" }, 401);
+
+  const session = await verifyJwt(authHeader.slice(7), c.env.JWT_SECRET);
+  if (!session || session.type !== "session") return c.json({ error: "Invalid session token" }, 401);
+
+  const body = await c.req.json<{ role: string }>();
+  const VALID_ROLES = ["waiter", "kitchen", "deliverer", "manager"];
+  if (!body.role || !VALID_ROLES.includes(body.role)) {
+    return c.json({ error: "Invalid role" }, 400);
+  }
+
+  const new_token = await signJwt(
+    { type: "session", device_id: session.device_id, restaurant_id: session.restaurant_id, staff_id: session.staff_id, role: body.role },
+    c.env.JWT_SECRET
+  );
+
+  return c.json({ session_token: new_token, role: body.role });
+});
+
+// PBKDF2 PIN hashing — stored as base64(salt)$base64(hash)
 async function hashPin(pin: string): Promise<string> {
-  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(pin));
-  return Array.from(new Uint8Array(buf))
-    .map((b) => b.toString(16).padStart(2, "0"))
-    .join("");
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const hash = await pbkdf2(pin, salt);
+  return `${btoa(String.fromCharCode(...salt))}$${btoa(String.fromCharCode(...new Uint8Array(hash)))}`;
 }
 
-export { auth as authRoutes };
+async function verifyPin(pin: string, stored: string): Promise<boolean> {
+  // Support legacy SHA-256 hashes (plain hex, no $ separator) during transition
+  if (!stored.includes("$")) {
+    const legacy = await sha256Hex(pin);
+    return legacy === stored;
+  }
+  const [saltB64, hashB64] = stored.split("$") as [string, string];
+  const salt = Uint8Array.from(atob(saltB64), (c) => c.charCodeAt(0));
+  const expectedHash = Uint8Array.from(atob(hashB64), (c) => c.charCodeAt(0));
+  const actualHash = new Uint8Array(await pbkdf2(pin, salt));
+  if (expectedHash.length !== actualHash.length) return false;
+  // Constant-time comparison
+  let diff = 0;
+  for (let i = 0; i < expectedHash.length; i++) diff |= (expectedHash[i] ?? 0) ^ (actualHash[i] ?? 0);
+  return diff === 0;
+}
+
+async function pbkdf2(pin: string, salt: Uint8Array): Promise<ArrayBuffer> {
+  const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(pin), "PBKDF2", false, ["deriveBits"]);
+  return crypto.subtle.deriveBits({ name: "PBKDF2", salt, iterations: 100_000, hash: "SHA-256" }, key, 256);
+}
+
+async function sha256Hex(input: string): Promise<string> {
+  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(input));
+  return Array.from(new Uint8Array(buf)).map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+export { auth as authRoutes, hashPin };

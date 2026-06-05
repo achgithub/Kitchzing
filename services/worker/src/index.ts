@@ -15,6 +15,7 @@ app.get("/health", (c) => c.json({ ok: true }));
 app.route("/auth", authRoutes);
 app.route("/orders", orderRoutes);
 
+
 app.notFound((c) => c.json({ error: "Not found" }, 404));
 
 export default app;
