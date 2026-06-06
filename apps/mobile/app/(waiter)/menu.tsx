@@ -1,34 +1,62 @@
-import { useState } from "react";
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, SafeAreaView, TextInput } from "react-native";
+import { useCallback, useEffect, useState } from "react";
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, SafeAreaView, TextInput, ActivityIndicator, RefreshControl } from "react-native";
 import { useRouter } from "expo-router";
-import { HARDCODED_MENU, type HardcodedItem } from "../../src/lib/hardcoded-menu";
 import { useAuth } from "../../src/context/auth";
+import { api, ApiError } from "../../src/lib/api";
+import type { MenuCategory, MenuItem } from "@kitchzing/core";
 
 export interface BasketItem {
-  item: HardcodedItem;
+  item: MenuItem & { category_name: string };
   quantity: number;
   notes: string;
   allergyNote: string;
 }
 
 export default function MenuScreen() {
-  const { staffName, clearSession } = useAuth();
+  const { deviceToken, sessionToken, staffName, clearSession } = useAuth();
+  const token = sessionToken ?? deviceToken ?? "";
   const router = useRouter();
+
+  const [categories, setCategories] = useState<MenuCategory[]>([]);
+  const [loading, setLoading] = useState(true);
   const [basket, setBasket] = useState<BasketItem[]>([]);
   const [tableRef, setTableRef] = useState("");
-  const [activeCategory, setActiveCategory] = useState(HARDCODED_MENU[0]?.id ?? "");
+  const [activeCategory, setActiveCategory] = useState("");
 
-  function addToBasket(item: HardcodedItem) {
+  const fetchMenu = useCallback(async () => {
+    try {
+      const res = await api.getMenu(token);
+      setCategories(res.categories);
+      if (!activeCategory && res.categories.length > 0) {
+        setActiveCategory(res.categories[0]?.id ?? "");
+      }
+    } catch (e) {
+      if (e instanceof ApiError && e.status === 401) clearSession();
+    } finally {
+      setLoading(false);
+    }
+  }, [token]);
+
+  useEffect(() => { fetchMenu(); }, [fetchMenu]);
+
+  function addToBasket(item: MenuItem, categoryName: string) {
     setBasket((prev) => {
       const existing = prev.find((b) => b.item.id === item.id);
-      if (existing) {
-        return prev.map((b) => b.item.id === item.id ? { ...b, quantity: b.quantity + 1 } : b);
-      }
-      return [...prev, { item, quantity: 1, notes: "", allergyNote: "" }];
+      if (existing) return prev.map((b) => b.item.id === item.id ? { ...b, quantity: b.quantity + 1 } : b);
+      return [...prev, { item: { ...item, category_name: categoryName }, quantity: 1, notes: "", allergyNote: "" }];
     });
   }
 
   const totalItems = basket.reduce((sum, b) => sum + b.quantity, 0);
+  const activeItems = categories.find((c) => c.id === activeCategory)?.items ?? [];
+
+  if (loading) {
+    return (
+      <SafeAreaView style={s.safe}>
+        <ActivityIndicator size="large" color="#111827" style={{ flex: 1 }} />
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={s.safe}>
@@ -54,45 +82,59 @@ export default function MenuScreen() {
       </View>
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.catBar} contentContainerStyle={s.catContent}>
-        {HARDCODED_MENU.map((cat) => (
-          <TouchableOpacity
-            key={cat.id}
-            style={[s.catPill, activeCategory === cat.id && s.catPillActive]}
-            onPress={() => setActiveCategory(cat.id)}
-          >
+        {categories.map((cat) => (
+          <TouchableOpacity key={cat.id} style={[s.catPill, activeCategory === cat.id && s.catPillActive]} onPress={() => setActiveCategory(cat.id)}>
             <Text style={[s.catPillText, activeCategory === cat.id && s.catPillTextActive]}>{cat.name}</Text>
           </TouchableOpacity>
         ))}
       </ScrollView>
 
-      <ScrollView style={s.list}>
-        {HARDCODED_MENU.filter((c) => c.id === activeCategory).map((cat) =>
-          cat.items.map((item) => {
-            const inBasket = basket.find((b) => b.item.id === item.id);
-            return (
-              <TouchableOpacity key={item.id} style={s.itemRow} onPress={() => addToBasket(item)}>
-                <View style={s.itemInfo}>
-                  <Text style={s.itemName}>{item.name}</Text>
-                  {item.allergens.length > 0 && (
-                    <Text style={s.allergenDots}>{item.allergens.map(() => "⚠").join(" ")} {item.allergens.join(", ")}</Text>
-                  )}
-                </View>
-                <View style={s.itemRight}>
-                  <Text style={s.itemPrice}>£{(item.price / 100).toFixed(2)}</Text>
-                  {inBasket && <Text style={s.inBasket}>×{inBasket.quantity}</Text>}
-                </View>
-              </TouchableOpacity>
-            );
-          })
+      <ScrollView style={s.list} refreshControl={<RefreshControl refreshing={false} onRefresh={fetchMenu} />}>
+        {categories.length === 0 && (
+          <View style={s.empty}>
+            <Text style={s.emptyText}>No menu items yet</Text>
+            <Text style={s.emptySub}>Ask your manager to set up the menu</Text>
+          </View>
         )}
+        {activeItems.map((item) => {
+          const inBasket = basket.find((b) => b.item.id === item.id);
+          const categoryName = categories.find((c) => c.id === activeCategory)?.name ?? "";
+          return (
+            <TouchableOpacity
+              key={item.id}
+              style={[s.itemRow, !item.in_stock && s.itemRowOOS]}
+              onPress={() => item.in_stock && addToBasket(item, categoryName)}
+              disabled={!item.in_stock}
+            >
+              <View style={s.itemInfo}>
+                <View style={s.itemNameRow}>
+                  <Text style={[s.itemName, !item.in_stock && s.itemNameOOS]}>{item.name}</Text>
+                  {!item.in_stock && <Text style={s.oosTag}>Out of stock</Text>}
+                </View>
+                {item.allergens.length > 0 && (
+                  <Text style={s.allergenDots}>⚠ {item.allergens.join(", ")}</Text>
+                )}
+              </View>
+              <View style={s.itemRight}>
+                <Text style={s.itemPrice}>£{(item.price / 100).toFixed(2)}</Text>
+                {inBasket && <Text style={s.inBasket}>×{inBasket.quantity}</Text>}
+              </View>
+            </TouchableOpacity>
+          );
+        })}
       </ScrollView>
 
       {totalItems > 0 && (
         <TouchableOpacity
-          style={s.basketBar}
-          onPress={() => router.push({ pathname: "/(waiter)/order", params: { tableRef, basket: JSON.stringify(basket) } })}
+          style={[s.basketBar, !tableRef.trim() && s.basketBarDim]}
+          onPress={() => {
+            if (!tableRef.trim()) return;
+            router.push({ pathname: "/(waiter)/order", params: { tableRef, basket: JSON.stringify(basket) } });
+          }}
         >
-          <Text style={s.basketText}>{totalItems} item{totalItems !== 1 ? "s" : ""} · Review order</Text>
+          <Text style={s.basketText}>
+            {tableRef.trim() ? `${totalItems} item${totalItems !== 1 ? "s" : ""} · Review order` : "Enter table number first"}
+          </Text>
         </TouchableOpacity>
       )}
     </SafeAreaView>
@@ -115,13 +157,21 @@ const s = StyleSheet.create({
   catPillText: { fontSize: 14, fontWeight: "600", color: "#374151" },
   catPillTextActive: { color: "#fff" },
   list: { flex: 1, paddingTop: 8 },
+  empty: { alignItems: "center", marginTop: 60 },
+  emptyText: { fontSize: 18, fontWeight: "700", color: "#6b7280" },
+  emptySub: { fontSize: 14, color: "#9ca3af", marginTop: 6 },
   itemRow: { flexDirection: "row", alignItems: "center", backgroundColor: "#fff", marginHorizontal: 16, marginBottom: 8, borderRadius: 12, padding: 16 },
+  itemRowOOS: { opacity: 0.5 },
   itemInfo: { flex: 1 },
+  itemNameRow: { flexDirection: "row", alignItems: "center", gap: 8 },
   itemName: { fontSize: 16, fontWeight: "600", color: "#111827" },
+  itemNameOOS: { color: "#9ca3af" },
+  oosTag: { fontSize: 11, color: "#ef4444", backgroundColor: "#fee2e2", borderRadius: 4, paddingHorizontal: 6, paddingVertical: 2 },
   allergenDots: { fontSize: 11, color: "#f59e0b", marginTop: 3 },
   itemRight: { alignItems: "flex-end", gap: 4 },
   itemPrice: { fontSize: 15, fontWeight: "700", color: "#111827" },
   inBasket: { fontSize: 13, color: "#6b7280", backgroundColor: "#f3f4f6", borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2 },
   basketBar: { margin: 16, backgroundColor: "#111827", borderRadius: 14, padding: 18, alignItems: "center" },
+  basketBarDim: { backgroundColor: "#6b7280" },
   basketText: { color: "#fff", fontSize: 16, fontWeight: "700" },
 });

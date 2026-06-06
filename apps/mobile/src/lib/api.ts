@@ -6,7 +6,9 @@ import type {
   LoginResponse,
   CreateOrderRequest,
   Order,
+  MenuCategory,
 } from "@kitchzing/core";
+import type { RestaurantConfig, PauseState } from "./types";
 
 class ApiError extends Error {
   constructor(public status: number, message: string) {
@@ -54,6 +56,42 @@ export const api = {
 
   getActiveOrders(token: string) {
     return request<{ orders: Order[] }>("/orders/active", { token });
+  },
+
+  getMenu(token: string) {
+    return request<{ categories: MenuCategory[] }>("/menu", { token });
+  },
+
+  getConfig(token: string) {
+    return request<{ config: RestaurantConfig; pause: PauseState }>("/config", { token });
+  },
+
+  pauseKitchen(body: { reason: string; reason_text?: string; resume_in_minutes?: number }, sessionToken: string) {
+    return request<{ ok: boolean }>("/config/pause", {
+      method: "POST",
+      body: JSON.stringify(body),
+      token: sessionToken,
+    });
+  },
+
+  resumeKitchen(sessionToken: string) {
+    return request<{ ok: boolean }>("/config/pause", { method: "DELETE", token: sessionToken });
+  },
+
+  toggleItemStock(itemId: string, in_stock: boolean, sessionToken: string) {
+    return request<{ ok: boolean }>(`/menu/items/${itemId}`, {
+      method: "PATCH",
+      body: JSON.stringify({ in_stock }),
+      token: sessionToken,
+    });
+  },
+
+  toggleOptionStock(choiceId: string, in_stock: boolean, sessionToken: string) {
+    return request<{ ok: boolean }>(`/menu/options/${choiceId}`, {
+      method: "PATCH",
+      body: JSON.stringify({ in_stock }),
+      token: sessionToken,
+    });
   },
 
   switchRole(role: string, sessionToken: string) {

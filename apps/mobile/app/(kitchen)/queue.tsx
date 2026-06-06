@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, SafeAreaView, RefreshControl, Alert } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, SafeAreaView, RefreshControl, Alert, Modal } from "react-native";
 import { useAuth } from "../../src/context/auth";
 import { api, ApiError } from "../../src/lib/api";
 import { POLL_INTERVAL_MS } from "../../src/lib/config";
 import type { Order, OrderItem } from "@kitchzing/core";
+import type { PauseState } from "../../src/lib/types";
 
 const STATE_SEQUENCE = ["new", "preparing", "ready", "delivered"];
 
@@ -23,21 +24,42 @@ function stateColour(state: string): string {
   }
 }
 
+const PAUSE_REASONS = [
+  { key: "too_busy", label: "Too busy" },
+  { key: "closed_early", label: "Closing early" },
+  { key: "other", label: "Other" },
+] as const;
+
+const RESUME_OPTIONS = [
+  { label: "Manual", minutes: undefined },
+  { label: "15 min", minutes: 15 },
+  { label: "30 min", minutes: 30 },
+  { label: "60 min", minutes: 60 },
+] as const;
+
 export default function KitchenQueue() {
-  const { sessionToken, deviceToken, staffName, clearSession } = useAuth();
+  const { sessionToken, deviceToken, staffName, role, clearSession } = useAuth();
   const token = sessionToken ?? deviceToken ?? "";
   const [orders, setOrders] = useState<Order[]>([]);
+  const [pause, setPause] = useState<PauseState | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [showPauseModal, setShowPauseModal] = useState(false);
+  const [pauseReason, setPauseReason] = useState<string>("too_busy");
+  const [resumeMinutes, setResumeMinutes] = useState<number | undefined>(undefined);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const fetchOrders = useCallback(async (silent = false) => {
     if (!silent) setLoading(true);
     try {
-      const res = await api.getActiveOrders(token);
-      setOrders(res.orders);
+      const [ordersRes, configRes] = await Promise.all([
+        api.getActiveOrders(token),
+        api.getConfig(token),
+      ]);
+      setOrders(ordersRes.orders);
+      setPause(configRes.pause);
     } catch {
-      // Silent fail on poll — network blip shouldn't clear the screen
+      // Silent fail on poll
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -56,40 +78,80 @@ export default function KitchenQueue() {
     try {
       await api.advanceItemState(item.id, next, sessionToken);
       setOrders((prev) =>
-        prev.map((o) => ({
-          ...o,
-          items: o.items.map((i) => i.id === item.id ? { ...i, state: next } : i),
-        }))
+        prev.map((o) => ({ ...o, items: o.items.map((i) => i.id === item.id ? { ...i, state: next } : i) }))
       );
     } catch (e) {
       Alert.alert("Error", e instanceof ApiError ? e.message : "Could not update item");
     }
   }
 
-  const activeOrders = orders.filter((o) =>
-    o.items.some((i) => i.state !== "delivered")
-  );
+  async function submitPause() {
+    if (!sessionToken) return;
+    try {
+      const res = await api.pauseKitchen({ reason: pauseReason, resume_in_minutes: resumeMinutes }, sessionToken);
+      setShowPauseModal(false);
+      setPause(res as unknown as PauseState);
+      fetchOrders(true);
+    } catch (e) {
+      Alert.alert("Error", e instanceof ApiError ? e.message : "Could not pause");
+    }
+  }
+
+  async function resume() {
+    if (!sessionToken) return;
+    try {
+      await api.resumeKitchen(sessionToken);
+      setPause((p) => p ? { ...p, paused: false } : p);
+    } catch (e) {
+      Alert.alert("Error", e instanceof ApiError ? e.message : "Could not resume");
+    }
+  }
+
+  const canPause = role === "kitchen" || role === "manager";
+  const activeOrders = orders.filter((o) => o.items.some((i) => i.state !== "delivered"));
 
   return (
     <SafeAreaView style={s.safe}>
+      {/* Pause banner */}
+      {pause?.paused && (
+        <View style={s.pauseBanner}>
+          <View style={s.pauseBannerText}>
+            <Text style={s.pauseBannerTitle}>Kitchen paused</Text>
+            <Text style={s.pauseBannerSub}>{pause.reason_text ?? pause.reason}</Text>
+          </View>
+          {canPause && (
+            <TouchableOpacity style={s.resumeBtn} onPress={resume}>
+              <Text style={s.resumeBtnText}>Resume</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      )}
+
       <View style={s.header}>
         <View>
           <Text style={s.title}>Kitchen</Text>
           <Text style={s.sub}>{activeOrders.length} active order{activeOrders.length !== 1 ? "s" : ""}</Text>
         </View>
-        <TouchableOpacity onPress={clearSession}>
-          <Text style={s.signOut}>Sign out</Text>
-        </TouchableOpacity>
+        <View style={s.headerActions}>
+          {canPause && !pause?.paused && (
+            <TouchableOpacity style={s.pauseBtn} onPress={() => setShowPauseModal(true)}>
+              <Text style={s.pauseBtnText}>Pause</Text>
+            </TouchableOpacity>
+          )}
+          <TouchableOpacity onPress={clearSession}>
+            <Text style={s.signOut}>Sign out</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       <ScrollView
         style={s.list}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); fetchOrders(); }} />}
+        refreshControl={<RefreshControl refreshing={refreshing} tintColor="#6b7280" onRefresh={() => { setRefreshing(true); fetchOrders(); }} />}
       >
         {activeOrders.length === 0 && !loading && (
           <View style={s.empty}>
             <Text style={s.emptyText}>No active orders</Text>
-            <Text style={s.emptySub}>Pull to refresh or wait for the next poll</Text>
+            <Text style={s.emptySub}>Pull to refresh</Text>
           </View>
         )}
 
@@ -105,12 +167,10 @@ export default function KitchenQueue() {
                   ))}
                 </View>
               )}
-
               <View style={s.cardHeader}>
                 <Text style={s.table}>Table {order.table_ref}</Text>
                 <Text style={s.time}>{new Date(order.created_at * 1000).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</Text>
               </View>
-
               {order.items.filter((i) => i.state !== "delivered").map((item) => (
                 <View key={item.id} style={s.itemRow}>
                   <View style={s.itemLeft}>
@@ -131,16 +191,59 @@ export default function KitchenQueue() {
           );
         })}
       </ScrollView>
+
+      {/* Pause modal */}
+      <Modal visible={showPauseModal} transparent animationType="slide" onRequestClose={() => setShowPauseModal(false)}>
+        <View style={s.modalOverlay}>
+          <View style={s.modalSheet}>
+            <Text style={s.modalTitle}>Pause kitchen</Text>
+
+            <Text style={s.modalLabel}>Reason</Text>
+            <View style={s.optionRow}>
+              {PAUSE_REASONS.map((r) => (
+                <TouchableOpacity key={r.key} style={[s.optionPill, pauseReason === r.key && s.optionPillActive]} onPress={() => setPauseReason(r.key)}>
+                  <Text style={[s.optionPillText, pauseReason === r.key && s.optionPillTextActive]}>{r.label}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            <Text style={s.modalLabel}>Auto-resume</Text>
+            <View style={s.optionRow}>
+              {RESUME_OPTIONS.map((r) => (
+                <TouchableOpacity key={r.label} style={[s.optionPill, resumeMinutes === r.minutes && s.optionPillActive]} onPress={() => setResumeMinutes(r.minutes)}>
+                  <Text style={[s.optionPillText, resumeMinutes === r.minutes && s.optionPillTextActive]}>{r.label}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            <TouchableOpacity style={s.pauseSubmitBtn} onPress={submitPause}>
+              <Text style={s.pauseSubmitText}>Pause kitchen</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={s.cancelBtn} onPress={() => setShowPauseModal(false)}>
+              <Text style={s.cancelText}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
 
 const s = StyleSheet.create({
   safe: { flex: 1, backgroundColor: "#111827" },
+  pauseBanner: { flexDirection: "row", alignItems: "center", backgroundColor: "#78350f", padding: 14, paddingHorizontal: 20 },
+  pauseBannerText: { flex: 1 },
+  pauseBannerTitle: { color: "#fbbf24", fontWeight: "800", fontSize: 14 },
+  pauseBannerSub: { color: "#fde68a", fontSize: 13, marginTop: 2 },
+  resumeBtn: { backgroundColor: "#fbbf24", borderRadius: 8, paddingHorizontal: 14, paddingVertical: 8 },
+  resumeBtnText: { color: "#78350f", fontWeight: "700", fontSize: 14 },
   header: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", padding: 20, paddingBottom: 12 },
   title: { fontSize: 28, fontWeight: "800", color: "#fff" },
   sub: { fontSize: 14, color: "#9ca3af", marginTop: 2 },
-  signOut: { fontSize: 14, color: "#6b7280", marginTop: 4 },
+  headerActions: { alignItems: "flex-end", gap: 8 },
+  pauseBtn: { backgroundColor: "#374151", borderRadius: 8, paddingHorizontal: 14, paddingVertical: 8 },
+  pauseBtnText: { color: "#f9fafb", fontWeight: "600", fontSize: 14 },
+  signOut: { fontSize: 14, color: "#6b7280" },
   list: { flex: 1 },
   empty: { alignItems: "center", marginTop: 80 },
   emptyText: { fontSize: 20, fontWeight: "700", color: "#6b7280" },
@@ -160,4 +263,17 @@ const s = StyleSheet.create({
   statePill: { flexDirection: "row", alignItems: "center", paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20 },
   stateText: { fontSize: 13, fontWeight: "700", color: "#111827" },
   stateArrow: { fontSize: 13, color: "#374151" },
+  modalOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.6)", justifyContent: "flex-end" },
+  modalSheet: { backgroundColor: "#1f2937", borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 40 },
+  modalTitle: { fontSize: 20, fontWeight: "800", color: "#fff", marginBottom: 20 },
+  modalLabel: { fontSize: 13, fontWeight: "600", color: "#9ca3af", marginBottom: 10, marginTop: 4 },
+  optionRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 16 },
+  optionPill: { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 20, backgroundColor: "#374151" },
+  optionPillActive: { backgroundColor: "#f59e0b" },
+  optionPillText: { fontSize: 14, fontWeight: "600", color: "#d1d5db" },
+  optionPillTextActive: { color: "#111827" },
+  pauseSubmitBtn: { backgroundColor: "#f59e0b", borderRadius: 12, padding: 16, alignItems: "center", marginTop: 8 },
+  pauseSubmitText: { color: "#111827", fontSize: 16, fontWeight: "700" },
+  cancelBtn: { padding: 14, alignItems: "center" },
+  cancelText: { color: "#9ca3af", fontSize: 16 },
 });
