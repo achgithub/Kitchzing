@@ -18,7 +18,9 @@ export default function Index() {
       const r = role as Role;
       if (r === "manager") {
         router.replace("/(manager)/");
-      } else if (r === "kitchen" || r === "deliverer") {
+      } else if (r === "deliverer") {
+        router.replace("/(kitchen)/deliver");
+      } else if (r === "kitchen") {
         router.replace("/(kitchen)/queue");
       } else {
         router.replace("/(waiter)/menu");

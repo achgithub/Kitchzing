@@ -18,7 +18,8 @@ const ROLE_LABELS: Record<string, string> = {
 
 function destinationFor(role: Role): string {
   if (role === "manager") return "/(manager)/";
-  if (role === "kitchen" || role === "deliverer") return "/(kitchen)/queue";
+  if (role === "deliverer") return "/(kitchen)/deliver";
+  if (role === "kitchen") return "/(kitchen)/queue";
   return "/(waiter)/menu";
 }
 
