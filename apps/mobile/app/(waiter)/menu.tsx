@@ -10,6 +10,20 @@ export interface BasketItem {
   quantity: number;
   notes: string;
   allergyNote: string;
+  selectedChoices: Record<string, string[]>; // groupId → choiceIds
+}
+
+function initChoices(item: MenuItem): Record<string, string[]> {
+  const out: Record<string, string[]> = {};
+  for (const group of item.option_groups) {
+    if (group.type === "single" && group.required) {
+      const first = group.choices.find((c) => c.in_stock);
+      out[group.id] = first ? [first.id] : [];
+    } else {
+      out[group.id] = [];
+    }
+  }
+  return out;
 }
 
 export default function MenuScreen() {
@@ -43,7 +57,7 @@ export default function MenuScreen() {
     setBasket((prev) => {
       const existing = prev.find((b) => b.item.id === item.id);
       if (existing) return prev.map((b) => b.item.id === item.id ? { ...b, quantity: b.quantity + 1 } : b);
-      return [...prev, { item: { ...item, category_name: categoryName }, quantity: 1, notes: "", allergyNote: "" }];
+      return [...prev, { item: { ...item, category_name: categoryName }, quantity: 1, notes: "", allergyNote: "", selectedChoices: initChoices(item) }];
     });
   }
 

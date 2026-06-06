@@ -3,8 +3,9 @@ import { View, Text, ScrollView, TouchableOpacity, StyleSheet, SafeAreaView, Ref
 import { useAuth } from "../../src/context/auth";
 import { api, ApiError } from "../../src/lib/api";
 import { POLL_INTERVAL_MS } from "../../src/lib/config";
+import { isWithinHours } from "../../src/lib/hours";
 import type { Order, OrderItem } from "@kitchzing/core";
-import type { PauseState } from "../../src/lib/types";
+import type { RestaurantConfig, PauseState } from "../../src/lib/types";
 
 const STATE_SEQUENCE = ["new", "preparing", "ready", "delivered"];
 
@@ -42,12 +43,14 @@ export default function KitchenQueue() {
   const token = sessionToken ?? deviceToken ?? "";
   const [orders, setOrders] = useState<Order[]>([]);
   const [pause, setPause] = useState<PauseState | null>(null);
+  const [config, setConfig] = useState<RestaurantConfig | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [showPauseModal, setShowPauseModal] = useState(false);
   const [pauseReason, setPauseReason] = useState<string>("too_busy");
   const [resumeMinutes, setResumeMinutes] = useState<number | undefined>(undefined);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const configRef = useRef<RestaurantConfig | null>(null);
 
   const fetchOrders = useCallback(async (silent = false) => {
     if (!silent) setLoading(true);
@@ -58,6 +61,8 @@ export default function KitchenQueue() {
       ]);
       setOrders(ordersRes.orders);
       setPause(configRes.pause);
+      setConfig(configRes.config);
+      configRef.current = configRes.config;
     } catch {
       // Silent fail on poll
     } finally {
@@ -68,7 +73,10 @@ export default function KitchenQueue() {
 
   useEffect(() => {
     fetchOrders();
-    intervalRef.current = setInterval(() => fetchOrders(true), POLL_INTERVAL_MS);
+    intervalRef.current = setInterval(() => {
+      if (configRef.current && !isWithinHours(configRef.current)) return;
+      fetchOrders(true);
+    }, POLL_INTERVAL_MS);
     return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
   }, [fetchOrders]);
 
@@ -109,9 +117,17 @@ export default function KitchenQueue() {
 
   const canPause = role === "kitchen" || role === "manager";
   const activeOrders = orders.filter((o) => o.items.some((i) => i.state !== "delivered"));
+  const isOpen = config ? isWithinHours(config) : true;
 
   return (
     <SafeAreaView style={s.safe}>
+      {/* Closed banner */}
+      {!isOpen && config && (
+        <View style={s.closedBanner}>
+          <Text style={s.closedBannerText}>Kitchen closed · Opens {config.open_time}</Text>
+        </View>
+      )}
+
       {/* Pause banner */}
       {pause?.paused && (
         <View style={s.pauseBanner}>
@@ -231,6 +247,8 @@ export default function KitchenQueue() {
 
 const s = StyleSheet.create({
   safe: { flex: 1, backgroundColor: "#111827" },
+  closedBanner: { backgroundColor: "#1e3a5f", padding: 12, paddingHorizontal: 20 },
+  closedBannerText: { color: "#93c5fd", fontWeight: "700", fontSize: 13, textAlign: "center" },
   pauseBanner: { flexDirection: "row", alignItems: "center", backgroundColor: "#78350f", padding: 14, paddingHorizontal: 20 },
   pauseBannerText: { flex: 1 },
   pauseBannerTitle: { color: "#fbbf24", fontWeight: "800", fontSize: 14 },

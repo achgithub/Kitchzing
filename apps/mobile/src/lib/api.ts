@@ -94,6 +94,13 @@ export const api = {
     });
   },
 
+  generateStaffToken(sessionToken: string) {
+    return request<{ token: string; restaurant_code: string; expires_in: number }>("/auth/staff-token", {
+      method: "POST",
+      token: sessionToken,
+    });
+  },
+
   switchRole(role: string, sessionToken: string) {
     return request<{ session_token: string; role: string }>("/auth/role", {
       method: "POST",

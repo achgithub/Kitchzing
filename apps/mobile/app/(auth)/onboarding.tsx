@@ -30,6 +30,16 @@ export default function Onboarding() {
       <Text style={s.logo}>KitchZing</Text>
       <Text style={s.subtitle}>Kitchen order management</Text>
 
+      <TouchableOpacity style={s.qrButton} onPress={() => router.push("/(auth)/scan")}>
+        <Text style={s.qrButtonText}>Scan QR code from manager</Text>
+      </TouchableOpacity>
+
+      <View style={s.dividerRow}>
+        <View style={s.dividerLine} />
+        <Text style={s.dividerLabel}>or enter code manually</Text>
+        <View style={s.dividerLine} />
+      </View>
+
       <View style={s.card}>
         <Text style={s.label}>Restaurant code</Text>
         <TextInput
@@ -52,6 +62,11 @@ const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#f9fafb", alignItems: "center", justifyContent: "center", padding: 24 },
   logo: { fontSize: 36, fontWeight: "800", color: "#111827" },
   subtitle: { fontSize: 16, color: "#6b7280", marginTop: 4, marginBottom: 40 },
+  qrButton: { width: "100%", backgroundColor: "#111827", borderRadius: 14, padding: 18, alignItems: "center", marginBottom: 20 },
+  qrButtonText: { color: "#fff", fontSize: 17, fontWeight: "700" },
+  dividerRow: { flexDirection: "row", alignItems: "center", width: "100%", marginBottom: 20 },
+  dividerLine: { flex: 1, height: 1, backgroundColor: "#e5e7eb" },
+  dividerLabel: { fontSize: 13, color: "#9ca3af", marginHorizontal: 12 },
   card: { width: "100%", backgroundColor: "#fff", borderRadius: 16, padding: 24, shadowColor: "#000", shadowOpacity: 0.06, shadowRadius: 12, elevation: 3 },
   label: { fontSize: 14, fontWeight: "600", color: "#374151", marginBottom: 8 },
   input: { borderWidth: 1, borderColor: "#d1d5db", borderRadius: 10, padding: 14, fontSize: 18, letterSpacing: 2, marginBottom: 16, textAlign: "center" },

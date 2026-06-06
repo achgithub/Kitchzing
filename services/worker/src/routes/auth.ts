@@ -118,6 +118,43 @@ auth.post("/login", async (c) => {
   });
 });
 
+// POST /auth/staff-token — generate a one-time onboarding token (manager only)
+// Returns a 6-char token stored in KV for 10 minutes
+auth.post("/staff-token", async (c) => {
+  const authHeader = c.req.header("Authorization");
+  if (!authHeader?.startsWith("Bearer ")) return c.json({ error: "Unauthorized" }, 401);
+
+  const session = await verifyJwt(authHeader.slice(7), c.env.JWT_SECRET);
+  if (!session || session.type !== "session" || session.role !== "manager") {
+    return c.json({ error: "Manager access required" }, 403);
+  }
+
+  const token = generateOTT();
+  await c.env.KV.put(
+    `restaurant-${session.restaurant_id}-ott-${token}`,
+    "1",
+    { expirationTtl: 600 } // 10 minutes
+  );
+
+  // Fetch restaurant code for the QR payload
+  const restaurant = await c.env.DB.prepare(
+    "SELECT code FROM restaurants WHERE id = ?"
+  ).bind(session.restaurant_id).first<{ code: string }>();
+
+  return c.json({
+    token,
+    restaurant_code: restaurant?.code ?? "",
+    expires_in: 600,
+  });
+});
+
+function generateOTT(): string {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // no ambiguous chars
+  return Array.from(crypto.getRandomValues(new Uint8Array(6)))
+    .map((b) => chars[b % chars.length])
+    .join("");
+}
+
 // POST /auth/role — re-issue session token with a chosen role
 // Waiter/kitchen/deliverer are freely switchable. Manager requires default_role = manager.
 auth.post("/role", async (c) => {

@@ -16,7 +16,9 @@ export default function Index() {
       router.replace("/(auth)/pin");
     } else {
       const r = role as Role;
-      if (r === "kitchen" || r === "manager" || r === "deliverer") {
+      if (r === "manager") {
+        router.replace("/(manager)/");
+      } else if (r === "kitchen" || r === "deliverer") {
         router.replace("/(kitchen)/queue");
       } else {
         router.replace("/(waiter)/menu");
