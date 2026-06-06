@@ -119,8 +119,7 @@ auth.post("/login", async (c) => {
 });
 
 // POST /auth/role — re-issue session token with a chosen role
-// The role selector calls this after login. All 4 roles are valid for any staff member
-// (per spec: staff are trusted to know their role).
+// Waiter/kitchen/deliverer are freely switchable. Manager requires default_role = manager.
 auth.post("/role", async (c) => {
   const authHeader = c.req.header("Authorization");
   if (!authHeader?.startsWith("Bearer ")) return c.json({ error: "Unauthorized" }, 401);
@@ -129,9 +128,23 @@ auth.post("/role", async (c) => {
   if (!session || session.type !== "session") return c.json({ error: "Invalid session token" }, 401);
 
   const body = await c.req.json<{ role: string }>();
-  const VALID_ROLES = ["waiter", "kitchen", "deliverer", "manager"];
-  if (!body.role || !VALID_ROLES.includes(body.role)) {
+  const OPERATIONAL_ROLES = ["waiter", "kitchen", "deliverer"];
+  const ALL_ROLES = [...OPERATIONAL_ROLES, "manager"];
+  if (!body.role || !ALL_ROLES.includes(body.role)) {
     return c.json({ error: "Invalid role" }, 400);
+  }
+
+  // Manager role requires the staff member's default_role to be manager
+  if (body.role === "manager") {
+    const staff = await c.env.DB.prepare(
+      "SELECT default_role FROM staff WHERE id = ? AND restaurant_id = ? AND active = 1"
+    )
+      .bind(session.staff_id, session.restaurant_id)
+      .first<{ default_role: string }>();
+
+    if (!staff || staff.default_role !== "manager") {
+      return c.json({ error: "Manager role not permitted" }, 403);
+    }
   }
 
   const new_token = await signJwt(
