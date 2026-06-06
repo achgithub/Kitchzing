@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, SafeAreaView, RefreshControl, Alert, Modal } from "react-native";
+import { useRouter } from "expo-router";
 import { useAuth } from "../../src/context/auth";
 import { api, ApiError } from "../../src/lib/api";
 import { POLL_INTERVAL_MS } from "../../src/lib/config";
 import { isWithinHours } from "../../src/lib/hours";
+import { RoleSwitcher } from "../../src/components/RoleSwitcher";
 import type { Order, OrderItem } from "@kitchzing/core";
 import type { RestaurantConfig, PauseState } from "../../src/lib/types";
 
@@ -40,7 +42,10 @@ const RESUME_OPTIONS = [
 
 export default function KitchenQueue() {
   const { sessionToken, deviceToken, staffName, role, clearSession } = useAuth();
+  const router = useRouter();
   const token = sessionToken ?? deviceToken ?? "";
+
+  function signOut() { clearSession(); router.replace("/(auth)/pin"); }
   const [orders, setOrders] = useState<Order[]>([]);
   const [pause, setPause] = useState<PauseState | null>(null);
   const [config, setConfig] = useState<RestaurantConfig | null>(null);
@@ -154,7 +159,8 @@ export default function KitchenQueue() {
               <Text style={s.pauseBtnText}>Pause</Text>
             </TouchableOpacity>
           )}
-          <TouchableOpacity onPress={clearSession}>
+          <RoleSwitcher dark />
+          <TouchableOpacity onPress={signOut}>
             <Text style={s.signOut}>Sign out</Text>
           </TouchableOpacity>
         </View>

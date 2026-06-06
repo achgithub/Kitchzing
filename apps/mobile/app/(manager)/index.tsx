@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, ScrollView, Ale
 import { useRouter } from "expo-router";
 import { useAuth } from "../../src/context/auth";
 import { api, ApiError } from "../../src/lib/api";
+import { RoleSwitcher } from "../../src/components/RoleSwitcher";
 import type { RestaurantConfig, PauseState } from "../../src/lib/types";
 
 export default function ManagerDashboard() {
@@ -81,9 +82,12 @@ export default function ManagerDashboard() {
             <Text style={s.restaurantName}>{restaurantName ?? "KitchZing"}</Text>
             <Text style={s.staffName}>Manager · {staffName ?? ""}</Text>
           </View>
-          <TouchableOpacity style={s.signOutBtn} onPress={signOut}>
-            <Text style={s.signOutText}>Sign out</Text>
-          </TouchableOpacity>
+          <View style={{ alignItems: "flex-end", gap: 8 }}>
+            <RoleSwitcher />
+            <TouchableOpacity style={s.signOutBtn} onPress={signOut}>
+              <Text style={s.signOutText}>Sign out</Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* Kitchen status card */}

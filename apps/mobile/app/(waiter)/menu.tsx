@@ -3,6 +3,7 @@ import { View, Text, ScrollView, TouchableOpacity, StyleSheet, SafeAreaView, Tex
 import { useRouter } from "expo-router";
 import { useAuth } from "../../src/context/auth";
 import { api, ApiError } from "../../src/lib/api";
+import { RoleSwitcher } from "../../src/components/RoleSwitcher";
 import type { MenuCategory, MenuItem } from "@kitchzing/core";
 
 export interface BasketItem {
@@ -30,6 +31,8 @@ export default function MenuScreen() {
   const { deviceToken, sessionToken, staffName, clearSession } = useAuth();
   const token = sessionToken ?? deviceToken ?? "";
   const router = useRouter();
+
+  function signOut() { clearSession(); router.replace("/(auth)/pin"); }
 
   const [categories, setCategories] = useState<MenuCategory[]>([]);
   const [loading, setLoading] = useState(true);
@@ -79,9 +82,12 @@ export default function MenuScreen() {
           <Text style={s.headerTitle}>Menu</Text>
           <Text style={s.headerSub}>{staffName}</Text>
         </View>
-        <TouchableOpacity onPress={clearSession}>
-          <Text style={s.signOut}>Sign out</Text>
-        </TouchableOpacity>
+        <View style={{ alignItems: "flex-end", gap: 6 }}>
+          <RoleSwitcher />
+          <TouchableOpacity onPress={signOut}>
+            <Text style={s.signOut}>Sign out</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       <View style={s.tableRow}>

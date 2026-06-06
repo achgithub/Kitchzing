@@ -35,3 +35,69 @@
 {"_e":"metro:server_log","_t":1780715392513,"level":"error","data":["[timeout] connection terminated with Device for app='%s' on device='%s' after not responding for %s seconds.","host.exp.Exponent","iPhone 17 Pro","60"]}
 {"_e":"metro:server_log","_t":1780717504484,"level":"error","data":["[timeout] connection terminated with Device for app='%s' on device='%s' after not responding for %s seconds.","host.exp.Exponent","iPhone 17 Pro","60"]}
 {"_e":"metro:server_log","_t":1780718499025,"level":"error","data":["[timeout] connection terminated with Device for app='%s' on device='%s' after not responding for %s seconds.","host.exp.Exponent","iPhone 17 Pro","60"]}
+{"_e":"metro:bundling:started","_t":1780734047330,"id":"m","platform":"ios","environment":null,"entry":"node_modules/.pnpm/expo-router@56.2.8_@babel+core@7.29.7_@expo+log-box@56.0.12_@expo+metro-runtime@56.0.13_@test_et7qzbcx2lj7yutfe7dzs72ngm/node_modules/expo-router/entry.js"}
+{"_e":"metro:bundling:done","_t":1780734048113,"id":"m","total":1,"ms":783.681959}
+{"_e":"metro:client_log","_t":1780734048479,"level":"error","data":["[Error: Cannot find native module 'ExpoSecureStore']"]}
+{"_e":"metro:client_log","_t":1780734048482,"level":"error","data":["[Error: Cannot find native module 'ExpoSecureStore']"]}
+{"_e":"metro:client_log","_t":1780734048483,"level":"warn","data":["Route \"./_layout.tsx\" is missing the required default export. Ensure a React component is exported as default."]}
+{"_e":"metro:client_log","_t":1780734048484,"level":"error","data":["[Error: Cannot find native module 'ExpoSecureStore']"]}
+{"_e":"metro:client_log","_t":1780734048484,"level":"warn","data":["Route \"./index.tsx\" is missing the required default export. Ensure a React component is exported as default."]}
+{"_e":"metro:client_log","_t":1780734048485,"level":"error","data":["[Error: Cannot find native module 'ExpoSecureStore']"]}
+{"_e":"metro:client_log","_t":1780734048485,"level":"warn","data":["Route \"./(auth)/onboarding.tsx\" is missing the required default export. Ensure a React component is exported as default."]}
+{"_e":"metro:client_log","_t":1780734048485,"level":"error","data":["[Error: Cannot find native module 'ExpoSecureStore']"]}
+{"_e":"metro:client_log","_t":1780734048485,"level":"warn","data":["Route \"./(auth)/pin.tsx\" is missing the required default export. Ensure a React component is exported as default."]}
+{"_e":"metro:client_log","_t":1780734048485,"level":"error","data":["[Error: Cannot find native module 'ExpoSecureStore']"]}
+{"_e":"metro:client_log","_t":1780734048485,"level":"warn","data":["Route \"./(auth)/role.tsx\" is missing the required default export. Ensure a React component is exported as default."]}
+{"_e":"metro:client_log","_t":1780734048487,"level":"error","data":["[Error: Cannot find native module 'ExpoCamera']"]}
+{"_e":"metro:client_log","_t":1780734048487,"level":"warn","data":["Route \"./(auth)/scan.tsx\" is missing the required default export. Ensure a React component is exported as default."]}
+{"_e":"metro:client_log","_t":1780734048487,"level":"error","data":["[Error: Cannot find native module 'ExpoSecureStore']"]}
+{"_e":"metro:client_log","_t":1780734048487,"level":"warn","data":["Route \"./(kitchen)/queue.tsx\" is missing the required default export. Ensure a React component is exported as default."]}
+{"_e":"metro:client_log","_t":1780734048572,"level":"error","data":["[Error: Cannot find native module 'ExpoSecureStore']"]}
+{"_e":"metro:client_log","_t":1780734048572,"level":"warn","data":["Route \"./(manager)/add-staff.tsx\" is missing the required default export. Ensure a React component is exported as default."]}
+{"_e":"metro:client_log","_t":1780734048573,"level":"error","data":["[Error: Cannot find native module 'ExpoSecureStore']"]}
+{"_e":"metro:client_log","_t":1780734048573,"level":"warn","data":["Route \"./(manager)/index.tsx\" is missing the required default export. Ensure a React component is exported as default."]}
+{"_e":"metro:client_log","_t":1780734048573,"level":"error","data":["[Error: Cannot find native module 'ExpoSecureStore']"]}
+{"_e":"metro:client_log","_t":1780734048573,"level":"warn","data":["Route \"./(waiter)/menu.tsx\" is missing the required default export. Ensure a React component is exported as default."]}
+{"_e":"metro:client_log","_t":1780734048574,"level":"error","data":["[Error: Cannot find native module 'ExpoSecureStore']"]}
+{"_e":"metro:client_log","_t":1780734048574,"level":"warn","data":["Route \"./(waiter)/order.tsx\" is missing the required default export. Ensure a React component is exported as default."]}
+{"_e":"metro:client_log","_t":1780734048576,"level":"error","data":["[Error: Cannot find native module 'ExpoSecureStore']"]}
+{"_e":"metro:client_log","_t":1780734048584,"level":"error","data":["[Error: Cannot find native module 'ExpoSecureStore']"]}
+{"_e":"metro:client_log","_t":1780734048584,"level":"error","data":["[Error: Cannot find native module 'ExpoSecureStore']"]}
+{"_e":"metro:client_log","_t":1780734048584,"level":"warn","data":["Route \"./_layout.tsx\" is missing the required default export. Ensure a React component is exported as default."]}
+{"_e":"metro:client_log","_t":1780734048584,"level":"error","data":["[Error: Cannot find native module 'ExpoSecureStore']"]}
+{"_e":"metro:client_log","_t":1780734048584,"level":"warn","data":["Route \"./index.tsx\" is missing the required default export. Ensure a React component is exported as default."]}
+{"_e":"metro:client_log","_t":1780734048584,"level":"error","data":["[Error: Cannot find native module 'ExpoSecureStore']"]}
+{"_e":"metro:client_log","_t":1780734048585,"level":"warn","data":["Route \"./(auth)/onboarding.tsx\" is missing the required default export. Ensure a React component is exported as default."]}
+{"_e":"metro:client_log","_t":1780734048585,"level":"error","data":["[Error: Cannot find native module 'ExpoSecureStore']"]}
+{"_e":"metro:client_log","_t":1780734048585,"level":"warn","data":["Route \"./(auth)/pin.tsx\" is missing the required default export. Ensure a React component is exported as default."]}
+{"_e":"metro:client_log","_t":1780734048585,"level":"error","data":["[Error: Cannot find native module 'ExpoSecureStore']"]}
+{"_e":"metro:client_log","_t":1780734048585,"level":"warn","data":["Route \"./(auth)/role.tsx\" is missing the required default export. Ensure a React component is exported as default."]}
+{"_e":"metro:client_log","_t":1780734048585,"level":"error","data":["[Error: Cannot find native module 'ExpoCamera']"]}
+{"_e":"metro:client_log","_t":1780734048585,"level":"warn","data":["Route \"./(auth)/scan.tsx\" is missing the required default export. Ensure a React component is exported as default."]}
+{"_e":"metro:client_log","_t":1780734048585,"level":"error","data":["[Error: Cannot find native module 'ExpoSecureStore']"]}
+{"_e":"metro:client_log","_t":1780734048585,"level":"warn","data":["Route \"./(kitchen)/queue.tsx\" is missing the required default export. Ensure a React component is exported as default."]}
+{"_e":"metro:client_log","_t":1780734048586,"level":"error","data":["[Error: Cannot find native module 'ExpoSecureStore']"]}
+{"_e":"metro:client_log","_t":1780734048586,"level":"warn","data":["Route \"./(manager)/add-staff.tsx\" is missing the required default export. Ensure a React component is exported as default."]}
+{"_e":"metro:client_log","_t":1780734048586,"level":"error","data":["[Error: Cannot find native module 'ExpoSecureStore']"]}
+{"_e":"metro:client_log","_t":1780734048586,"level":"warn","data":["Route \"./(manager)/index.tsx\" is missing the required default export. Ensure a React component is exported as default."]}
+{"_e":"metro:client_log","_t":1780734048586,"level":"error","data":["[Error: Cannot find native module 'ExpoSecureStore']"]}
+{"_e":"metro:client_log","_t":1780734048586,"level":"warn","data":["Route \"./(waiter)/menu.tsx\" is missing the required default export. Ensure a React component is exported as default."]}
+{"_e":"metro:client_log","_t":1780734048586,"level":"error","data":["[Error: Cannot find native module 'ExpoSecureStore']"]}
+{"_e":"metro:client_log","_t":1780734048586,"level":"warn","data":["Route \"./(waiter)/order.tsx\" is missing the required default export. Ensure a React component is exported as default."]}
+{"_e":"metro:client_log","_t":1780734048586,"level":"error","data":["[Error: Cannot find native module 'ExpoSecureStore']"]}
+{"_e":"metro:client_log","_t":1780734048591,"level":"error","data":["[TypeError: Cannot read property 'ErrorBoundary' of undefined]"]}
+{"_e":"root:init","_t":1780734333256,"format":"v0-jsonl","version":"56.1.13"}
+{"_e":"devserver:start","_t":1780734333262,"mode":"development","web":true,"baseUrl":"","asyncRoutes":false,"routerRoot":"../../../app","serverComponents":false,"serverActions":false,"serverRendering":false,"apiRoutes":false,"exporting":false}
+{"_e":"metro:config","_t":1780734333538,"serverRoot":"../../../../..","projectRoot":"../../..","exporting":false,"flags":{"autolinkingModuleResolution":true,"serverActions":false,"serverComponents":false,"reactCompiler":false,"optimizeGraph":false,"treeshaking":false,"logbox":false}}
+{"_e":"metro:instantiate","_t":1780734333825,"atlas":false,"workers":7,"host":"::","port":8081}
+{"_e":"metro:bundling:started","_t":1780734418116,"id":"1","platform":"ios","environment":null,"entry":"node_modules/.pnpm/expo-router@56.2.8_@babel+core@7.29.7_@expo+log-box@56.0.12_@expo+metro-runtime@56.0.13_@test_et7qzbcx2lj7yutfe7dzs72ngm/node_modules/expo-router/entry.js"}
+{"_e":"metro:bundling:progress","_t":1780734418116,"id":"1","progress":0,"total":1,"current":0}
+{"_e":"metro:bundling:progress","_t":1780734418119,"id":"1","progress":0,"total":1,"current":0}
+{"_e":"metro:bundling:progress","_t":1780734418219,"id":"1","progress":0.22759027017927785,"total":436,"current":208}
+{"_e":"metro:bundling:progress","_t":1780734418319,"id":"1","progress":0.5270278685021824,"total":905,"current":657}
+{"_e":"metro:bundling:progress","_t":1780734418419,"id":"1","progress":0.8990084003534636,"total":1196,"current":1134}
+{"_e":"metro:bundling:done","_t":1780734418511,"id":"1","total":1196,"ms":394.95025}
+{"_e":"metro:client_log","_t":1780734446291,"level":"warn","data":["SafeAreaView has been deprecated and will be removed in a future release. Please use 'react-native-safe-area-context' instead. See https://github.com/AppAndFlow/react-native-safe-area-context"]}
+{"_e":"metro:server_log","_t":1780734477850,"level":"error","data":["[timeout] connection terminated with Device for app='%s' on device='%s' after not responding for %s seconds.","com.sportsmanager.darts","iPhone 17 Pro","60"]}
+{"_e":"metro:server_log","_t":1780734571679,"level":"error","data":["[timeout] connection terminated with Device for app='%s' on device='%s' after not responding for %s seconds.","com.sportsmanager.darts","iPhone 17 Pro","60"]}
+{"_e":"metro:client_log","_t":1780734648462,"level":"error","data":["[ReferenceError: Property 'useRouter' doesn't exist]"]}
