@@ -95,7 +95,7 @@ export default function AddStaff() {
               </View>
               <View style={s.codeItem}>
                 <Text style={s.codeLabel}>Staff code</Text>
-                <Text style={s.code}>{token}</Text>
+                <Text style={s.code}>{token ? `${token.slice(0, 6)} ${token.slice(6)}` : ""}</Text>
               </View>
             </View>
             <TouchableOpacity style={s.shareBtn} onPress={share}>

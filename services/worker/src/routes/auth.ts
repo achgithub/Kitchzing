@@ -19,6 +19,15 @@ auth.post("/register", async (c) => {
 
   const code = body.restaurant_code.trim().toUpperCase();
 
+  // Rate-limit: max 10 register attempts per restaurant code per 5-minute window
+  const window = Math.floor(Date.now() / 300_000);
+  const rlKey = `ratelimit-register-${code}-${window}`;
+  const attempts = parseInt((await c.env.KV.get(rlKey)) ?? "0", 10);
+  if (attempts >= 10) {
+    return c.json({ error: "Too many registration attempts. Try again in a few minutes." }, 429);
+  }
+  await c.env.KV.put(rlKey, String(attempts + 1), { expirationTtl: 300 });
+
   const restaurant = await c.env.DB.prepare(
     "SELECT id, name, active FROM restaurants WHERE code = ?"
   )
@@ -150,7 +159,8 @@ auth.post("/staff-token", async (c) => {
 
 function generateOTT(): string {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // no ambiguous chars
-  return Array.from(crypto.getRandomValues(new Uint8Array(6)))
+  // 12 chars × 5 bits = 60 bits of entropy; combined with KV rate-limiting this is brute-force infeasible
+  return Array.from(crypto.getRandomValues(new Uint8Array(12)))
     .map((b) => chars[b % chars.length])
     .join("");
 }
